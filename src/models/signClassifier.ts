@@ -46,11 +46,14 @@ function avg(...scores: number[]): number {
 
 /** Helpers for common finger states */
 function isExtended(val: number): number {
-  return inRange(val, 0.75, 2.0); // > 0.75 is considered open/extended
+  // New ratio: tip-to-wrist / pip-to-wrist
+  // > 1.05 means tip is further away than PIP (finger is straight)
+  return inRange(val, 1.05, 3.0); 
 }
 
 function isCurled(val: number): number {
-  return inRange(val, 0.0, 0.65); // < 0.65 is considered curled/closed
+  // < 0.95 means tip is tucked closer to wrist than PIP
+  return inRange(val, 0.0, 0.95); 
 }
 
 /**

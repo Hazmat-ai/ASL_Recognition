@@ -64,23 +64,21 @@ function angleBetween(v1: HandLandmark, v2: HandLandmark): number {
 }
 
 /**
- * How "extended" a finger is (1.0 = fully open, 0.0 = fully curled).
- * Computed as ratio of (tip-to-wrist distance) / (mcp-to-wrist distance + tip-to-mcp distance).
+ * How "extended" a finger is.
+ * Computed as ratio of (tip-to-wrist distance) / (pip-to-wrist distance).
+ * If > 1.0, the tip is further away than the PIP joint (finger is straight).
+ * If < 1.0, the tip is curled inwards closer to the wrist than the PIP joint.
  */
-export function fingerExtension(lms: HandLandmark[], tipIdx: number, mcpIdx: number): number {
+export function fingerExtension(lms: HandLandmark[], tipIdx: number, pipIdx: number): number {
   const wrist = lms[LM.WRIST];
   const tip = lms[tipIdx];
-  const mcp = lms[mcpIdx];
+  const pip = lms[pipIdx];
 
   const tipToWrist = dist3(tip, wrist);
-  const mcpToWrist = dist3(mcp, wrist);
-  const tipToMcp = dist3(tip, mcp);
+  const pipToWrist = dist3(pip, wrist);
 
-  // When finger is extended, tip-to-wrist > mcp-to-wrist
-  // Ratio normalised relative to the total finger length
-  const fingerLen = mcpToWrist + tipToMcp;
-  if (fingerLen === 0) return 0;
-  return tipToWrist / fingerLen;
+  if (pipToWrist === 0) return 0;
+  return tipToWrist / pipToWrist;
 }
 
 /** Extension ratios for all 5 fingers: [thumb, index, middle, ring, pinky] */
@@ -94,11 +92,11 @@ export interface FingerState {
 
 export function getFingerExtensions(lms: HandLandmark[]): FingerState {
   return {
-    thumb:  fingerExtension(lms, LM.THUMB_TIP,  LM.THUMB_MCP),
-    index:  fingerExtension(lms, LM.INDEX_TIP,  LM.INDEX_MCP),
-    middle: fingerExtension(lms, LM.MIDDLE_TIP, LM.MIDDLE_MCP),
-    ring:   fingerExtension(lms, LM.RING_TIP,   LM.RING_MCP),
-    pinky:  fingerExtension(lms, LM.PINKY_TIP,  LM.PINKY_MCP),
+    thumb:  fingerExtension(lms, LM.THUMB_TIP,  LM.THUMB_IP),
+    index:  fingerExtension(lms, LM.INDEX_TIP,  LM.INDEX_PIP),
+    middle: fingerExtension(lms, LM.MIDDLE_TIP, LM.MIDDLE_PIP),
+    ring:   fingerExtension(lms, LM.RING_TIP,   LM.RING_PIP),
+    pinky:  fingerExtension(lms, LM.PINKY_TIP,  LM.PINKY_PIP),
   };
 }
 
