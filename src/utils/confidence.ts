@@ -118,3 +118,26 @@ export function thumbIndexAngle(lms: HandLandmark[]): number {
   const indexVec = sub(lms[LM.INDEX_TIP], lms[LM.INDEX_MCP]);
   return angleBetween(thumbVec, indexVec);
 }
+
+/** 
+ * Returns 1.0 if hand is parallel to the camera (facing front or back).
+ * Returns 0.0 if hand is held sideways (like holding a cup).
+ * Uses Z-depth difference between Index MCP and Pinky MCP.
+ */
+export function handFlatness(lms: HandLandmark[]): number {
+  const zDiff = Math.abs(lms[LM.INDEX_MCP].z - lms[LM.PINKY_MCP].z);
+  // Sideways hand has zDiff ~0.8 to 1.2. Flat hand is ~0.0 to 0.3.
+  return Math.max(0, 1 - zDiff);
+}
+
+/**
+ * Returns 1.0 if the hand is pointing generally UP.
+ * Returns 0.0 if pointing DOWN or SIDEWAYS.
+ */
+export function pointingUp(lms: HandLandmark[]): number {
+  const yDiff = lms[LM.MIDDLE_MCP].y - lms[LM.WRIST].y;
+  // If pointing UP, yDiff is ~ -1.0. (Screen coordinates, Y goes down).
+  if (yDiff < -0.6) return 1.0;
+  if (yDiff > -0.2) return 0.0;
+  return (-0.2 - yDiff) / 0.4;
+}

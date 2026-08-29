@@ -5,6 +5,8 @@ import {
   getFingerExtensions,
   thumbPinch,
   thumbIndexAngle,
+  handFlatness,
+  pointingUp,
   LM,
 } from '../utils/confidence';
 import type { FingerState } from '../utils/confidence';
@@ -147,14 +149,15 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'SORRY',
     displayLabel: 'Sorry',
-    // Closed fist. Thumb on top.
-    match(f) {
+    // Closed fist. Thumb on top. Rubs chest (usually points down/left, NOT straight up)
+    match(f, lms) {
       return avg(
         isCurled(f.index),
         isCurled(f.middle),
         isCurled(f.ring),
         isCurled(f.pinky),
-        inRange(f.thumb, 0.5, 0.9) // Thumb prominent over fist
+        inRange(f.thumb, 0.5, 0.9), // Thumb prominent over fist
+        inRange(pointingUp(lms), 0.0, 0.4) // Hand is angled/downwards, not UP like 'A'
       );
     },
   },
@@ -270,14 +273,15 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'WANT',
     displayLabel: 'Want',
-    // Curved open hand (like grabbing)
-    match(f) {
+    // Curved open hand (like grabbing). Hand is relatively flat to camera.
+    match(f, lms) {
       return avg(
         inRange(f.index, 0.5, 0.9),
         inRange(f.middle, 0.5, 0.9),
         inRange(f.ring, 0.5, 0.9),
         inRange(f.pinky, 0.5, 0.9),
-        inRange(f.thumb, 0.5, 0.9)
+        inRange(f.thumb, 0.5, 0.9),
+        inRange(handFlatness(lms), 0.6, 1.0) // Distinguishes from 'C'
       );
     },
   },
@@ -303,7 +307,7 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'LETTER_A',
     displayLabel: 'A',
-    // Fist, thumb alongside index
+    // Fist, thumb alongside index, hand pointing UP
     match(f, lms) {
       const thumbSide = thumbPinch(lms, LM.INDEX_MCP);
       return avg(
@@ -312,7 +316,8 @@ const SIGN_DEFINITIONS: SignDef[] = [
         isCurled(f.ring),
         isCurled(f.pinky),
         inRange(f.thumb, 0.5, 0.9),
-        inRange(thumbSide, 0.0, 0.5) // Thumb close to side
+        inRange(thumbSide, 0.0, 0.5), // Thumb close to side
+        inRange(pointingUp(lms), 0.7, 1.0) // Must point UP
       );
     },
   },
@@ -337,14 +342,15 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'LETTER_C',
     displayLabel: 'C',
-    // Curved C shape
-    match(f) {
+    // Curved C shape. Hand is held SIDEWAYS.
+    match(f, lms) {
       return avg(
         inRange(f.index, 0.5, 0.9),
         inRange(f.middle, 0.5, 0.9),
         inRange(f.ring, 0.5, 0.9),
         inRange(f.pinky, 0.5, 0.9),
-        inRange(f.thumb, 0.5, 0.9)
+        inRange(f.thumb, 0.5, 0.9),
+        inRange(handFlatness(lms), 0.0, 0.4) // Sideways hand distinguishes from 'WANT'
       );
     },
   },
