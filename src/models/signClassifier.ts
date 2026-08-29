@@ -534,6 +534,47 @@ const SIGN_DEFINITIONS: SignDef[] = [
       );
     },
   },
+  
+  {
+    sign: 'LETTER_I',
+    displayLabel: 'I',
+    // Only pinky extended
+    match(f, lms) {
+      return avg(
+        isCurled(f.thumb),
+        isCurled(f.index),
+        isCurled(f.middle),
+        isCurled(f.ring),
+        isExtended(f.pinky),
+        inRange(pointingUp(lms), 0.7, 1.0)
+      );
+    }
+  },
+  
+  {
+    sign: 'FAMILY',
+    displayLabel: 'Family',
+    isTwoHanded: true,
+    // Both hands in 'F' shape (index and thumb touching), pinky sides or thumb sides touching.
+    // Statically, let's just check both hands are in 'F' shape.
+    match(f, lms, raw, h2) {
+      if (!h2 || !raw) return 0;
+      
+      const pinch1 = thumbPinch(lms, LM.INDEX_TIP);
+      const pinch2 = thumbPinch(h2.lms, LM.INDEX_TIP);
+      
+      return avg(
+        inRange(pinch1, 0.0, 0.25),
+        inRange(pinch2, 0.0, 0.25),
+        isExtended(f.middle),
+        isExtended(f.ring),
+        isExtended(f.pinky),
+        isExtended(h2.f.middle),
+        isExtended(h2.f.ring),
+        isExtended(h2.f.pinky)
+      );
+    }
+  },
 ];
 
 // ─── Geometric Classifier ─────────────────────────────────────────────────────
