@@ -1,4 +1,4 @@
-import type { HandLandmark, SignPrediction } from '../types/sign';
+import type { HandLandmark, SignPrediction, HandResult } from '../types/sign';
 import { NO_PREDICTION } from '../types/sign';
 import {
   normalizeLandmarks,
@@ -7,6 +7,7 @@ import {
   thumbIndexAngle,
   handFlatness,
   pointingUp,
+  handDistance,
   LM,
 } from '../utils/confidence';
 import type { FingerState } from '../utils/confidence';
@@ -15,19 +16,25 @@ import type { FingerState } from '../utils/confidence';
 
 export interface SignRecognitionModel {
   /**
-   * Recognise a sign from 21 MediaPipe hand landmarks.
+   * Recognise a sign from one or more detected hands.
    * Returns {sign, confidence, displayLabel} or NO_PREDICTION when nothing matches.
    */
-  recognize(landmarks: HandLandmark[]): SignPrediction;
+  recognize(hands: HandResult[]): SignPrediction;
 }
 
-// ─── Sign definitions ─────────────────────────────────────────────────────────
+export interface HandData {
+  f: FingerState;
+  lms: HandLandmark[]; // normalized
+  raw: HandLandmark[]; // screen coordinates
+  handedness: 'Left' | 'Right';
+}
 
 interface SignDef {
   sign: string;
   displayLabel: string;
+  isTwoHanded?: boolean;
   /** Matcher function — returns confidence 0–1, or 0 if not matching */
-  match(f: FingerState, lms: HandLandmark[]): number;
+  match(f: FingerState, lms: HandLandmark[], raw?: HandLandmark[], h2?: HandData): number;
 }
 
 /**
@@ -257,17 +264,96 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'MORE',
     displayLabel: 'More',
-    // All fingertips touching thumb
-    match(f, lms) {
-      const indexPinch  = thumbPinch(lms, LM.INDEX_TIP);
-      const middlePinch = thumbPinch(lms, LM.MIDDLE_TIP);
+    isTwoHanded: true,
+    // Both hands: All fingertips touching thumb. Wrists/hands must be close to each other.
+    match(f, lms, raw, h2) {
+      if (!h2 || !raw) return 0;
+      const indexPinch1  = thumbPinch(lms, LM.INDEX_TIP);
+      const middlePinch1 = thumbPinch(lms, LM.MIDDLE_TIP);
+      const indexPinch2  = thumbPinch(h2.lms, LM.INDEX_TIP);
+      const middlePinch2 = thumbPinch(h2.lms, LM.MIDDLE_TIP);
+      
+      const dist = handDistance(raw, h2.raw, LM.INDEX_TIP);
+      
       return avg(
-        inRange(indexPinch, 0.0, 0.4),
-        inRange(middlePinch, 0.0, 0.5),
+        inRange(indexPinch1, 0.0, 0.4),
+        inRange(middlePinch1, 0.0, 0.5),
+        inRange(indexPinch2, 0.0, 0.4),
+        inRange(middlePinch2, 0.0, 0.5),
         inRange(f.ring, 0.2, 0.8),
-        inRange(f.pinky, 0.2, 0.8)
+        inRange(h2.f.ring, 0.2, 0.8),
+        inRange(dist, 0.0, 0.25) // Hands must be close together
       );
     },
+  },
+  
+  {
+    sign: 'HOUSE',
+    displayLabel: 'House',
+    isTwoHanded: true,
+    // Both hands flat, fingertips touching forming a roof
+    match(f, lms, raw, h2) {
+      if (!h2 || !raw) return 0;
+      
+      const dist = handDistance(raw, h2.raw, LM.INDEX_TIP);
+      
+      return avg(
+        isExtended(f.index),
+        isExtended(f.middle),
+        isExtended(f.ring),
+        isExtended(h2.f.index),
+        isExtended(h2.f.middle),
+        isExtended(h2.f.ring),
+        inRange(dist, 0.0, 0.2) // Fingertips touching
+      );
+    }
+  },
+
+  {
+    sign: 'BOOK',
+    displayLabel: 'Book',
+    isTwoHanded: true,
+    // Both hands flat, pinkies touching, palms facing up/open
+    match(f, lms, raw, h2) {
+      if (!h2 || !raw) return 0;
+      
+      const pinkyDist = handDistance(raw, h2.raw, LM.PINKY_MCP);
+      
+      return avg(
+        isExtended(f.index),
+        isExtended(f.middle),
+        isExtended(f.ring),
+        isExtended(f.pinky),
+        isExtended(h2.f.index),
+        isExtended(h2.f.middle),
+        isExtended(h2.f.ring),
+        isExtended(h2.f.pinky),
+        inRange(pinkyDist, 0.0, 0.15) // Pinky sides touching
+      );
+    }
+  },
+
+  {
+    sign: 'FINISHED',
+    displayLabel: 'Finished',
+    isTwoHanded: true,
+    // Both hands open, fingers spread, palms facing away/sideways
+    match(f, lms, raw, h2) {
+      if (!h2 || !raw) return 0;
+      
+      return avg(
+        isExtended(f.index),
+        isExtended(f.middle),
+        isExtended(f.ring),
+        isExtended(f.pinky),
+        isExtended(h2.f.index),
+        isExtended(h2.f.middle),
+        isExtended(h2.f.ring),
+        isExtended(h2.f.pinky),
+        inRange(handFlatness(lms), 0.7, 1.0),
+        inRange(handFlatness(h2.lms), 0.7, 1.0)
+      );
+    }
   },
 
   {
@@ -459,17 +545,41 @@ export class GeometricSignClassifier implements SignRecognitionModel {
     this.confidenceThreshold = confidenceThreshold;
   }
 
-  recognize(landmarks: HandLandmark[]): SignPrediction {
-    if (!landmarks || landmarks.length < 21) return NO_PREDICTION;
+  recognize(hands: HandResult[]): SignPrediction {
+    if (!hands || hands.length === 0) return NO_PREDICTION;
 
-    const normalized = normalizeLandmarks(landmarks);
-    const fingerState = getFingerExtensions(normalized);
+    // Build HandData for all detected hands
+    const handDataList: HandData[] = hands.map(h => {
+      const normalized = normalizeLandmarks(h.landmarks);
+      return {
+        f: getFingerExtensions(normalized),
+        lms: normalized,
+        raw: h.landmarks,
+        handedness: h.handedness
+      };
+    });
 
     let bestSign: SignDef | null = null;
     let bestScore = 0;
 
     for (const def of SIGN_DEFINITIONS) {
-      const score = def.match(fingerState, normalized);
+      let score = 0;
+
+      if (def.isTwoHanded) {
+        if (handDataList.length >= 2) {
+          // Test (Hand 0, Hand 1) and (Hand 1, Hand 0)
+          const scoreA = def.match(handDataList[0].f, handDataList[0].lms, handDataList[0].raw, handDataList[1]);
+          const scoreB = def.match(handDataList[1].f, handDataList[1].lms, handDataList[1].raw, handDataList[0]);
+          score = Math.max(scoreA, scoreB);
+        }
+      } else {
+        // One-handed sign: take the max score across all detected hands
+        for (const hd of handDataList) {
+          const s = def.match(hd.f, hd.lms, hd.raw);
+          if (s > score) score = s;
+        }
+      }
+
       if (score > bestScore) {
         bestScore = score;
         bestSign = def;

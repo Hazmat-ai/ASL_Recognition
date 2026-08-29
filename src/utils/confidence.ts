@@ -141,3 +141,11 @@ export function pointingUp(lms: HandLandmark[]): number {
   if (yDiff > -0.2) return 0.0;
   return (-0.2 - yDiff) / 0.4;
 }
+
+/** 
+ * Returns distance between two landmarks across two hands (using raw screen coordinates). 
+ * e.g., handDistance(h1, h2, LM.WRIST)
+ */
+export function handDistance(rawLms1: HandLandmark[], rawLms2: HandLandmark[], idx: number = LM.WRIST): number {
+  return dist3(rawLms1[idx], rawLms2[idx]);
+}

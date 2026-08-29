@@ -3,7 +3,7 @@ import type { HandLandmarkerResult } from '@mediapipe/tasks-vision';
 import { createSignClassifier } from '../models/signClassifier';
 import { TemporalSmoother } from '../utils/smoothing';
 import { SentenceBuilder } from '../utils/sentenceBuilder';
-import type { SignPrediction, SentenceWord, RecognitionSettings } from '../types/sign';
+import type { SignPrediction, SentenceWord, RecognitionSettings, HandResult } from '../types/sign';
 import { NO_PREDICTION } from '../types/sign';
 
 interface UseSignRecognitionOptions {
@@ -49,11 +49,14 @@ export function useSignRecognition({ settings, enabled, onWordAccepted }: UseSig
       return;
     }
 
-    // Use the first detected hand's landmarks
-    const landmarks = result.landmarks[0];
-    const prediction = classifierRef.current.recognize(
-      landmarks.map((lm) => ({ x: lm.x, y: lm.y, z: lm.z })),
-    );
+    // Extract all hands
+    const hands: HandResult[] = result.landmarks.map((landmarks, index) => ({
+      landmarks,
+      // handedness is usually an array of classification objects with a categoryName
+      handedness: result.handedness[index]?.[0]?.categoryName === 'Left' ? 'Left' : 'Right',
+    }));
+
+    const prediction = classifierRef.current.recognize(hands);
 
     // Only pass predictions above the confidence threshold to the smoother
     const filteredPrediction =
