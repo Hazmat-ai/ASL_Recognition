@@ -30,10 +30,11 @@ interface SignDef {
 
 /**
  * Helper: returns 1 if value is within [min, max], else scales down towards 0.
+ * We use a larger margin to make the classifier more forgiving.
  */
 function inRange(value: number, min: number, max: number): number {
   if (value >= min && value <= max) return 1;
-  const margin = (max - min) * 0.3;
+  const margin = Math.max((max - min) * 0.8, 0.15); // more forgiving falloff
   if (value < min) return Math.max(0, 1 - (min - value) / margin);
   return Math.max(0, 1 - (value - max) / margin);
 }
@@ -41,6 +42,15 @@ function inRange(value: number, min: number, max: number): number {
 /** Average confidence of multiple sub-scores */
 function avg(...scores: number[]): number {
   return scores.reduce((a, b) => a + b, 0) / scores.length;
+}
+
+/** Helpers for common finger states */
+function isExtended(val: number): number {
+  return inRange(val, 0.75, 2.0); // > 0.75 is considered open/extended
+}
+
+function isCurled(val: number): number {
+  return inRange(val, 0.0, 0.65); // < 0.65 is considered curled/closed
 }
 
 /**
@@ -57,14 +67,14 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'HELLO',
     displayLabel: 'Hello',
-    // Open hand, all 5 fingers extended, thumb out
+    // Open hand, all 5 fingers extended
     match(f) {
       return avg(
-        inRange(f.index,  0.85, 1.2),
-        inRange(f.middle, 0.85, 1.2),
-        inRange(f.ring,   0.85, 1.2),
-        inRange(f.pinky,  0.85, 1.2),
-        inRange(f.thumb,  0.75, 1.2),
+        isExtended(f.index),
+        isExtended(f.middle),
+        isExtended(f.ring),
+        isExtended(f.pinky),
+        isExtended(f.thumb)
       );
     },
   },
@@ -72,16 +82,14 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'THANK_YOU',
     displayLabel: 'Thank You',
-    // Flat hand, fingers together, touches chin then moves forward
-    // Static: 4 fingers extended, thumb slightly bent, touching lips area
-    // We'll detect: index, middle, ring, pinky all extended, thumb mid-range
+    // Flat hand, fingers together. Thumb can be slightly tucked.
     match(f) {
       return avg(
-        inRange(f.index,  0.82, 1.1),
-        inRange(f.middle, 0.82, 1.1),
-        inRange(f.ring,   0.80, 1.1),
-        inRange(f.pinky,  0.75, 1.1),
-        inRange(f.thumb,  0.4,  0.75),
+        isExtended(f.index),
+        isExtended(f.middle),
+        isExtended(f.ring),
+        isExtended(f.pinky),
+        inRange(f.thumb, 0.0, 0.85) // Thumb doesn't have to be fully out
       );
     },
   },
@@ -89,14 +97,14 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'YES',
     displayLabel: 'Yes',
-    // Fist with wrist bob. Static: closed fist, thumb alongside index
+    // Fist. Index, middle, ring, pinky curled.
     match(f) {
       return avg(
-        inRange(f.index,  0.3, 0.60),
-        inRange(f.middle, 0.3, 0.60),
-        inRange(f.ring,   0.3, 0.60),
-        inRange(f.pinky,  0.3, 0.65),
-        inRange(f.thumb,  0.4, 0.75),
+        isCurled(f.index),
+        isCurled(f.middle),
+        isCurled(f.ring),
+        isCurled(f.pinky),
+        inRange(f.thumb, 0.3, 0.8) // Thumb rests on outside
       );
     },
   },
@@ -104,14 +112,14 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'NO',
     displayLabel: 'No',
-    // Index and middle fingers extended, tapping together (static: two fingers extended)
+    // Index and middle fingers extended, others curled
     match(f) {
       return avg(
-        inRange(f.index,  0.82, 1.1),
-        inRange(f.middle, 0.82, 1.1),
-        inRange(f.ring,   0.3,  0.58),
-        inRange(f.pinky,  0.3,  0.58),
-        inRange(f.thumb,  0.3,  0.68),
+        isExtended(f.index),
+        isExtended(f.middle),
+        isCurled(f.ring),
+        isCurled(f.pinky),
+        inRange(f.thumb, 0.2, 0.8)
       );
     },
   },
@@ -119,17 +127,16 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'PLEASE',
     displayLabel: 'Please',
-    // Flat hand on chest — 4 fingers extended together, thumb tucked
+    // Flat hand on chest — 4 fingers extended, thumb tucked more than Thank You
     match(f, lms) {
-      // Similar to THANK_YOU but thumb more tucked
       const pinch = thumbPinch(lms, LM.INDEX_MCP);
       return avg(
-        inRange(f.index,  0.80, 1.1),
-        inRange(f.middle, 0.80, 1.1),
-        inRange(f.ring,   0.78, 1.1),
-        inRange(f.pinky,  0.72, 1.1),
-        inRange(f.thumb,  0.3,  0.55),
-        inRange(pinch,    0.0,  0.5),
+        isExtended(f.index),
+        isExtended(f.middle),
+        isExtended(f.ring),
+        isExtended(f.pinky),
+        isCurled(f.thumb),
+        inRange(pinch, 0.0, 0.6) // Thumb close to hand
       );
     },
   },
@@ -137,14 +144,14 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'SORRY',
     displayLabel: 'Sorry',
-    // Closed fist rubbed in circle on chest. Static: fist, thumb on top
+    // Closed fist. Thumb on top.
     match(f) {
       return avg(
-        inRange(f.index,  0.35, 0.65),
-        inRange(f.middle, 0.35, 0.65),
-        inRange(f.ring,   0.35, 0.65),
-        inRange(f.pinky,  0.35, 0.68),
-        inRange(f.thumb,  0.55, 0.85), // thumb slightly extended over fist
+        isCurled(f.index),
+        isCurled(f.middle),
+        isCurled(f.ring),
+        isCurled(f.pinky),
+        inRange(f.thumb, 0.5, 0.9) // Thumb prominent over fist
       );
     },
   },
@@ -152,15 +159,14 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'HELP',
     displayLabel: 'Help',
-    // Closed fist with thumb up (thumbs up pose) lifting on flat palm
-    // Static: thumb extended, rest curled
+    // Thumbs up pose
     match(f) {
       return avg(
-        inRange(f.thumb,  0.85, 1.2),  // thumb up
-        inRange(f.index,  0.3,  0.60),
-        inRange(f.middle, 0.3,  0.60),
-        inRange(f.ring,   0.3,  0.60),
-        inRange(f.pinky,  0.3,  0.65),
+        isExtended(f.thumb),
+        isCurled(f.index),
+        isCurled(f.middle),
+        isCurled(f.ring),
+        isCurled(f.pinky)
       );
     },
   },
@@ -171,11 +177,11 @@ const SIGN_DEFINITIONS: SignDef[] = [
     // ILY: thumb, index, pinky extended; middle and ring curled
     match(f) {
       return avg(
-        inRange(f.thumb,  0.75, 1.2),
-        inRange(f.index,  0.82, 1.2),
-        inRange(f.middle, 0.3,  0.60),
-        inRange(f.ring,   0.3,  0.60),
-        inRange(f.pinky,  0.82, 1.2),
+        isExtended(f.thumb),
+        isExtended(f.index),
+        isCurled(f.middle),
+        isCurled(f.ring),
+        isExtended(f.pinky)
       );
     },
   },
@@ -183,15 +189,14 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'MY',
     displayLabel: 'My',
-    // Flat hand, fingers together but slightly bent (touching chest)
-    // Distinguishing: all fingers moderately bent, together
+    // Flat hand, touching chest. Fingers slightly bent due to angle.
     match(f) {
       return avg(
-        inRange(f.index,  0.60, 0.82),
-        inRange(f.middle, 0.60, 0.82),
-        inRange(f.ring,   0.60, 0.82),
-        inRange(f.pinky,  0.60, 0.82),
-        inRange(f.thumb,  0.5,  0.75),
+        inRange(f.index, 0.5, 0.9),
+        inRange(f.middle, 0.5, 0.9),
+        inRange(f.ring, 0.5, 0.9),
+        inRange(f.pinky, 0.5, 0.9),
+        inRange(f.thumb, 0.4, 0.8)
       );
     },
   },
@@ -199,15 +204,14 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'GOOD',
     displayLabel: 'Good',
-    // Flat hand at chin level moving forward
-    // Static: thumb up with all other fingers at mid range (looks like salute going to thumbs up)
+    // Fingers mostly extended, but less rigid than HELLO
     match(f) {
       return avg(
-        inRange(f.thumb,  0.70, 1.0),
-        inRange(f.index,  0.70, 1.0),
-        inRange(f.middle, 0.70, 1.0),
-        inRange(f.ring,   0.65, 1.0),
-        inRange(f.pinky,  0.65, 0.95),
+        inRange(f.thumb, 0.6, 1.2),
+        inRange(f.index, 0.6, 1.2),
+        inRange(f.middle, 0.6, 1.2),
+        inRange(f.ring, 0.6, 1.2),
+        inRange(f.pinky, 0.6, 1.2)
       );
     },
   },
@@ -215,14 +219,14 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'BAD',
     displayLabel: 'Bad',
-    // All fingers bent at ~90 degrees inward (like half-curl)
+    // All fingers bent at ~90 degrees inward
     match(f) {
       return avg(
-        inRange(f.index,  0.50, 0.75),
-        inRange(f.middle, 0.50, 0.75),
-        inRange(f.ring,   0.50, 0.75),
-        inRange(f.pinky,  0.50, 0.78),
-        inRange(f.thumb,  0.3,  0.60),
+        inRange(f.index, 0.4, 0.8),
+        inRange(f.middle, 0.4, 0.8),
+        inRange(f.ring, 0.4, 0.8),
+        inRange(f.pinky, 0.4, 0.8),
+        isCurled(f.thumb)
       );
     },
   },
@@ -230,17 +234,16 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'STOP',
     displayLabel: 'Stop',
-    // Karate chop — flat hand, all fingers extended, hand vertical
-    // Distinguished from HELLO by narrower thumb angle
+    // Karate chop — flat hand, thumb close to index
     match(f, lms) {
       const tiAngle = thumbIndexAngle(lms);
       return avg(
-        inRange(f.index,  0.85, 1.2),
-        inRange(f.middle, 0.85, 1.2),
-        inRange(f.ring,   0.85, 1.2),
-        inRange(f.pinky,  0.82, 1.2),
-        inRange(f.thumb,  0.5,  0.80),
-        inRange(tiAngle,  20,   60),  // thumb relatively close to index
+        isExtended(f.index),
+        isExtended(f.middle),
+        isExtended(f.ring),
+        isExtended(f.pinky),
+        inRange(f.thumb, 0.4, 0.85),
+        inRange(tiAngle, 10, 65) // Thumb relatively close to index
       );
     },
   },
@@ -248,15 +251,15 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'MORE',
     displayLabel: 'More',
-    // All fingertips touching thumb (all pinched together)
+    // All fingertips touching thumb
     match(f, lms) {
       const indexPinch  = thumbPinch(lms, LM.INDEX_TIP);
       const middlePinch = thumbPinch(lms, LM.MIDDLE_TIP);
       return avg(
-        inRange(indexPinch,  0.0, 0.35),
-        inRange(middlePinch, 0.0, 0.45),
-        inRange(f.ring,  0.3, 0.70),
-        inRange(f.pinky, 0.3, 0.70),
+        inRange(indexPinch, 0.0, 0.4),
+        inRange(middlePinch, 0.0, 0.5),
+        inRange(f.ring, 0.2, 0.8),
+        inRange(f.pinky, 0.2, 0.8)
       );
     },
   },
@@ -264,14 +267,14 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'WANT',
     displayLabel: 'Want',
-    // Curved open hand (like grabbing), fingers spread and slightly bent
+    // Curved open hand (like grabbing)
     match(f) {
       return avg(
-        inRange(f.index,  0.62, 0.84),
-        inRange(f.middle, 0.62, 0.84),
-        inRange(f.ring,   0.60, 0.83),
-        inRange(f.pinky,  0.60, 0.83),
-        inRange(f.thumb,  0.60, 0.85),
+        inRange(f.index, 0.5, 0.9),
+        inRange(f.middle, 0.5, 0.9),
+        inRange(f.ring, 0.5, 0.9),
+        inRange(f.pinky, 0.5, 0.9),
+        inRange(f.thumb, 0.5, 0.9)
       );
     },
   },
@@ -279,16 +282,15 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'NEED',
     displayLabel: 'Need',
-    // Index finger bent down (like a hook/question mark finger bent)
+    // Index finger bent down (hook), others curled
     match(f, lms) {
       const indexPinch = thumbPinch(lms, LM.INDEX_TIP);
       return avg(
-        inRange(f.index,  0.45, 0.70),  // index bent
-        inRange(f.middle, 0.3,  0.60),  // others curled
-        inRange(f.ring,   0.3,  0.60),
-        inRange(f.pinky,  0.3,  0.62),
-        inRange(f.thumb,  0.5,  0.80),
-        inRange(indexPinch, 0.2, 0.65),
+        inRange(f.index, 0.4, 0.75), // Index bent
+        isCurled(f.middle),
+        isCurled(f.ring),
+        isCurled(f.pinky),
+        inRange(indexPinch, 0.2, 0.7)
       );
     },
   },
@@ -298,16 +300,16 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'LETTER_A',
     displayLabel: 'A',
-    // Fist with thumb alongside (not over fingers)
+    // Fist, thumb alongside index
     match(f, lms) {
       const thumbSide = thumbPinch(lms, LM.INDEX_MCP);
       return avg(
-        inRange(f.index,  0.30, 0.58),
-        inRange(f.middle, 0.30, 0.58),
-        inRange(f.ring,   0.30, 0.58),
-        inRange(f.pinky,  0.30, 0.60),
-        inRange(f.thumb,  0.55, 0.85),
-        inRange(thumbSide, 0.1, 0.4),
+        isCurled(f.index),
+        isCurled(f.middle),
+        isCurled(f.ring),
+        isCurled(f.pinky),
+        inRange(f.thumb, 0.5, 0.9),
+        inRange(thumbSide, 0.0, 0.5) // Thumb close to side
       );
     },
   },
@@ -315,16 +317,16 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'LETTER_B',
     displayLabel: 'B',
-    // 4 fingers extended and together, thumb tucked across palm
+    // 4 fingers extended, thumb tucked
     match(f, lms) {
       const thumbTucked = thumbPinch(lms, LM.RING_MCP);
       return avg(
-        inRange(f.index,  0.88, 1.2),
-        inRange(f.middle, 0.88, 1.2),
-        inRange(f.ring,   0.85, 1.2),
-        inRange(f.pinky,  0.82, 1.1),
-        inRange(f.thumb,  0.3,  0.55),
-        inRange(thumbTucked, 0.0, 0.45),
+        isExtended(f.index),
+        isExtended(f.middle),
+        isExtended(f.ring),
+        isExtended(f.pinky),
+        isCurled(f.thumb),
+        inRange(thumbTucked, 0.0, 0.55)
       );
     },
   },
@@ -332,14 +334,14 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'LETTER_C',
     displayLabel: 'C',
-    // Curved like letter C — all fingers and thumb curved
+    // Curved C shape
     match(f) {
       return avg(
-        inRange(f.index,  0.65, 0.85),
-        inRange(f.middle, 0.65, 0.85),
-        inRange(f.ring,   0.62, 0.84),
-        inRange(f.pinky,  0.60, 0.83),
-        inRange(f.thumb,  0.60, 0.83),
+        inRange(f.index, 0.5, 0.9),
+        inRange(f.middle, 0.5, 0.9),
+        inRange(f.ring, 0.5, 0.9),
+        inRange(f.pinky, 0.5, 0.9),
+        inRange(f.thumb, 0.5, 0.9)
       );
     },
   },
@@ -347,16 +349,15 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'LETTER_D',
     displayLabel: 'D',
-    // Index extended, middle+ring+pinky curled to thumb
+    // Index extended, others curled to thumb
     match(f, lms) {
       const middlePinch = thumbPinch(lms, LM.MIDDLE_TIP);
       return avg(
-        inRange(f.index,  0.85, 1.2),
-        inRange(f.middle, 0.3,  0.60),
-        inRange(f.ring,   0.3,  0.60),
-        inRange(f.pinky,  0.3,  0.62),
-        inRange(f.thumb,  0.4,  0.70),
-        inRange(middlePinch, 0.0, 0.45),
+        isExtended(f.index),
+        isCurled(f.middle),
+        isCurled(f.ring),
+        isCurled(f.pinky),
+        inRange(middlePinch, 0.0, 0.5)
       );
     },
   },
@@ -364,14 +365,14 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'LETTER_L',
     displayLabel: 'L',
-    // Index and thumb extended (L-shape), others curled
+    // Index and thumb extended
     match(f) {
       return avg(
-        inRange(f.thumb,  0.82, 1.2),
-        inRange(f.index,  0.85, 1.2),
-        inRange(f.middle, 0.3,  0.60),
-        inRange(f.ring,   0.3,  0.60),
-        inRange(f.pinky,  0.3,  0.62),
+        isExtended(f.thumb),
+        isExtended(f.index),
+        isCurled(f.middle),
+        isCurled(f.ring),
+        isCurled(f.pinky)
       );
     },
   },
@@ -379,17 +380,17 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'LETTER_O',
     displayLabel: 'O',
-    // All fingertips touching thumb tip (round O shape)
+    // All fingertips touching thumb
     match(f, lms) {
       const indexPinch  = thumbPinch(lms, LM.INDEX_TIP);
       const middlePinch = thumbPinch(lms, LM.MIDDLE_TIP);
       const ringPinch   = thumbPinch(lms, LM.RING_TIP);
       return avg(
-        inRange(indexPinch,  0.0, 0.28),
-        inRange(middlePinch, 0.0, 0.35),
-        inRange(ringPinch,   0.0, 0.45),
-        inRange(f.index,  0.45, 0.78),
-        inRange(f.middle, 0.45, 0.78),
+        inRange(indexPinch, 0.0, 0.35),
+        inRange(middlePinch, 0.0, 0.4),
+        inRange(ringPinch, 0.0, 0.5),
+        inRange(f.index, 0.4, 0.8),
+        inRange(f.middle, 0.4, 0.8)
       );
     },
   },
@@ -397,14 +398,14 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'LETTER_V',
     displayLabel: 'V',
-    // Index and middle extended (V/peace sign), ring+pinky+thumb curled
+    // Index and middle extended
     match(f) {
       return avg(
-        inRange(f.index,  0.85, 1.2),
-        inRange(f.middle, 0.85, 1.2),
-        inRange(f.ring,   0.3,  0.60),
-        inRange(f.pinky,  0.3,  0.62),
-        inRange(f.thumb,  0.3,  0.65),
+        isExtended(f.index),
+        isExtended(f.middle),
+        isCurled(f.ring),
+        isCurled(f.pinky),
+        isCurled(f.thumb)
       );
     },
   },
@@ -412,14 +413,14 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'LETTER_W',
     displayLabel: 'W',
-    // Index, middle, ring extended; thumb and pinky curled
+    // Index, middle, ring extended
     match(f) {
       return avg(
-        inRange(f.index,  0.85, 1.2),
-        inRange(f.middle, 0.85, 1.2),
-        inRange(f.ring,   0.83, 1.2),
-        inRange(f.pinky,  0.3,  0.60),
-        inRange(f.thumb,  0.3,  0.65),
+        isExtended(f.index),
+        isExtended(f.middle),
+        isExtended(f.ring),
+        isCurled(f.pinky),
+        isCurled(f.thumb)
       );
     },
   },
@@ -427,14 +428,14 @@ const SIGN_DEFINITIONS: SignDef[] = [
   {
     sign: 'LETTER_Y',
     displayLabel: 'Y',
-    // Thumb and pinky extended, others curled
+    // Thumb and pinky extended
     match(f) {
       return avg(
-        inRange(f.thumb,  0.82, 1.2),
-        inRange(f.index,  0.3,  0.62),
-        inRange(f.middle, 0.3,  0.60),
-        inRange(f.ring,   0.3,  0.60),
-        inRange(f.pinky,  0.82, 1.2),
+        isExtended(f.thumb),
+        isCurled(f.index),
+        isCurled(f.middle),
+        isCurled(f.ring),
+        isExtended(f.pinky)
       );
     },
   },
