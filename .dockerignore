@@ -1,0 +1,12 @@
+node_modules
+.git
+dist
+data
+backups
+test-results
+playwright-report
+.env
+public/models
+public/wasm
+.env.*
+!.env.example

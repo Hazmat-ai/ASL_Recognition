@@ -13,6 +13,7 @@ export class SentenceBuilder {
       timestamp: Date.now(),
     };
     this.words.push(word);
+    if (this.words.length > 100) this.words.splice(0, this.words.length - 100);
     return word;
   }
 

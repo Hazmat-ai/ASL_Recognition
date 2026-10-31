@@ -22,3 +22,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Private runtime data and generated assets
+.env
+.env.*
+!.env.example
+data/
+backups/
+public/models/
+public/wasm/
+test-results/
+playwright-report/

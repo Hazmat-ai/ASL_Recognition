@@ -9,6 +9,7 @@ export function useSpeech(settings: TtsSettings) {
   const [voices, setVoices] = useState<VoiceOption[]>([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isSupported] = useState(() => speechService.isSupported());
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
 
@@ -21,6 +22,7 @@ export function useSpeech(settings: TtsSettings) {
 
   const speak = useCallback((text: string) => {
     if (!isSupported || !text.trim()) return;
+    if (pollRef.current !== null) clearInterval(pollRef.current);
     speechService.speak(text, {
       voiceURI: settingsRef.current.voiceURI,
       rate:     settingsRef.current.rate,
@@ -29,18 +31,25 @@ export function useSpeech(settings: TtsSettings) {
     });
     setIsSpeaking(true);
     // Poll speaking state
-    const poll = setInterval(() => {
+    pollRef.current = setInterval(() => {
       if (!speechService.isSpeaking()) {
         setIsSpeaking(false);
-        clearInterval(poll);
+        if (pollRef.current !== null) clearInterval(pollRef.current);
+        pollRef.current = null;
       }
     }, 200);
   }, [isSupported]);
 
   const stop = useCallback(() => {
     speechService.stop();
+    if (pollRef.current !== null) clearInterval(pollRef.current);
+    pollRef.current = null;
     setIsSpeaking(false);
   }, []);
+
+  useEffect(() => { const hidden = () => { if(document.hidden) stop(); }; document.addEventListener('visibilitychange',hidden); return () => document.removeEventListener('visibilitychange',hidden); }, [stop]);
+
+  useEffect(() => () => { speechService.stop(); if (pollRef.current !== null) clearInterval(pollRef.current); }, []);
 
   return { voices, isSpeaking, isSupported, speak, stop };
 }

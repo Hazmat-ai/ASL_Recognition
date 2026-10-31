@@ -9,22 +9,25 @@ import { NO_PREDICTION } from '../types/sign';
 interface UseSignRecognitionOptions {
   settings: RecognitionSettings;
   enabled: boolean;
+  resetKey?: string;
   onWordAccepted?: (word: SentenceWord) => void;
 }
 
-const classifier = createSignClassifier();
-const smoother = new TemporalSmoother();
-const sentenceBuilder = new SentenceBuilder();
-
-export function useSignRecognition({ settings, enabled, onWordAccepted }: UseSignRecognitionOptions) {
+export function useSignRecognition({ settings, enabled, resetKey, onWordAccepted }: UseSignRecognitionOptions) {
   const [currentPrediction, setCurrentPrediction] = useState<SignPrediction>(NO_PREDICTION);
   const [holdProgress, setHoldProgress] = useState(0);
   const [words, setWords] = useState<SentenceWord[]>([]);
   const [handsDetected, setHandsDetected] = useState(false);
 
+  const [classifier] = useState(() => createSignClassifier(0));
+  const [smoother] = useState(() => new TemporalSmoother());
+  const [builder] = useState(() => new SentenceBuilder());
   const classifierRef = useRef(classifier);
-  const smootherRef   = useRef(smoother);
-  const builderRef    = useRef(sentenceBuilder);
+  const smootherRef = useRef(smoother);
+  const builderRef = useRef(builder);
+  useEffect(() => {
+    smoother.reset(); setCurrentPrediction(NO_PREDICTION); setHoldProgress(0); setHandsDetected(false);
+  }, [enabled, resetKey, smoother]);
   const settingsRef   = useRef(settings);
   settingsRef.current = settings;
 
@@ -71,7 +74,7 @@ export function useSignRecognition({ settings, enabled, onWordAccepted }: UseSig
       setCurrentPrediction(NO_PREDICTION);
     }
 
-    const now = Date.now();
+    const now = performance.now();
     const accepted = smootherRef.current.feed(filteredPrediction, now);
     setHoldProgress(smootherRef.current.getHoldProgress(now));
 

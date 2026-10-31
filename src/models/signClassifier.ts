@@ -602,6 +602,7 @@ export class GeometricSignClassifier implements SignRecognitionModel {
 
     let bestSign: SignDef | null = null;
     let bestScore = 0;
+    let runnerUpScore = 0;
 
     for (const def of SIGN_DEFINITIONS) {
       let score = 0;
@@ -622,12 +623,13 @@ export class GeometricSignClassifier implements SignRecognitionModel {
       }
 
       if (score > bestScore) {
+        runnerUpScore = bestScore;
         bestScore = score;
         bestSign = def;
-      }
+      } else { runnerUpScore = Math.max(runnerUpScore, score); }
     }
 
-    if (!bestSign || bestScore < this.confidenceThreshold) {
+    if (!bestSign || bestScore < this.confidenceThreshold || bestScore - runnerUpScore < 0.06) {
       return NO_PREDICTION;
     }
 

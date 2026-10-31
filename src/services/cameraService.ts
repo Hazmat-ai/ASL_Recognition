@@ -13,6 +13,7 @@ export interface CameraServiceOptions {
 
 export class CameraService {
   private stream: MediaStream | null = null;
+  private generation = 0;
 
   async enumerateCameras(): Promise<CameraDevice[]> {
     try {
@@ -31,6 +32,7 @@ export class CameraService {
   async start(opts: CameraServiceOptions = {}): Promise<{ stream: MediaStream; status: CameraStatus }> {
     // Stop any existing stream
     this.stop();
+    const generation = this.generation;
 
     const constraints: MediaStreamConstraints = {
       video: {
@@ -44,6 +46,7 @@ export class CameraService {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (generation !== this.generation) { stream.getTracks().forEach(track => track.stop()); return { stream: null as unknown as MediaStream, status: 'idle' }; }
       this.stream = stream;
       return { stream, status: 'active' };
     } catch (err) {
@@ -60,6 +63,7 @@ export class CameraService {
   }
 
   stop(): void {
+    this.generation++;
     if (this.stream) {
       this.stream.getTracks().forEach((t) => t.stop());
       this.stream = null;
