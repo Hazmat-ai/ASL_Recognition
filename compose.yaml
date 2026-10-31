@@ -1,0 +1,31 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      APP_ORIGIN: https://${APP_DOMAIN:?Set APP_DOMAIN to your domain}
+      PROXY_TOKEN: ${PROXY_TOKEN:?Set a random 64-character lowercase hex PROXY_TOKEN}
+    volumes:
+      - palm_data:/app/data
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+  proxy:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Set APP_DOMAIN}
+      PROXY_TOKEN: ${PROXY_TOKEN:?Set PROXY_TOKEN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+volumes:
+  palm_data:
+  caddy_data:
+  caddy_config:

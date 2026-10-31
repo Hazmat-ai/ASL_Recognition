@@ -11,6 +11,7 @@ export default defineConfig({
     exclude: ['@mediapipe/tasks-vision'],
   },
   server: {
+    proxy: { "/api": { target:"http://localhost:3000", changeOrigin:true, headers: { origin:"http://localhost:3000" } } },
     headers: {
       // Required for SharedArrayBuffer / COOP needed by some MediaPipe WASM builds
       'Cross-Origin-Opener-Policy': 'same-origin',

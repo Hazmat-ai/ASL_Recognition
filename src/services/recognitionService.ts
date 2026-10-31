@@ -12,36 +12,40 @@ export class RecognitionService {
   private videoEl: HTMLVideoElement | null = null;
   private callback: RecognitionCallback | null = null;
   private running = false;
+  private onError: (() => void) | undefined;
   private lastVideoTime = -1;
 
   async initialize(): Promise<void> {
     const vision = await FilesetResolver.forVisionTasks(
-      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm',
+      '/wasm',
     );
 
-    this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
+    const options = {
       baseOptions: {
         modelAssetPath:
-          'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
-        delegate: 'GPU',
+          '/models/hand_landmarker.task',
+        delegate: 'GPU' as const,
       },
-      runningMode: 'VIDEO',
+      runningMode: 'VIDEO' as const,
       numHands: 2,
       minHandDetectionConfidence: 0.5,
       minHandPresenceConfidence: 0.5,
       minTrackingConfidence: 0.5,
-    });
+    };
+    try { this.handLandmarker = await HandLandmarker.createFromOptions(vision, options); }
+    catch { this.handLandmarker = await HandLandmarker.createFromOptions(vision, { ...options, baseOptions:{ ...options.baseOptions, delegate:'CPU' } }); }
   }
 
   isReady(): boolean {
     return this.handLandmarker !== null;
   }
 
-  start(videoEl: HTMLVideoElement, callback: RecognitionCallback): void {
+  start(videoEl: HTMLVideoElement, callback: RecognitionCallback, onError?: () => void): void {
     if (!this.handLandmarker) {
       console.warn('[RecognitionService] HandLandmarker not initialised');
       return;
     }
+    this.onError = onError;
     this.videoEl = videoEl;
     this.callback = callback;
     this.running = true;
@@ -75,7 +79,9 @@ export class RecognitionService {
         const result = this.handLandmarker.detectForVideo(video, performance.now());
         this.callback(result);
       } catch (err) {
-        console.error('[RecognitionService] Detection error:', err);
+        this.stop();
+        this.onError?.();
+        return;
       }
     }
 

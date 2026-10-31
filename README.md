@@ -1,214 +1,39 @@
-# ✋ ASL Sign Language Translator
+# Palm — ASL learning and camera practice
 
-A real-time **American Sign Language (ASL)** translator that runs entirely in your browser. Uses your webcam, MediaPipe for hand tracking, and a geometric sign classifier to recognize hand shapes and convert them into text subtitles with optional text-to-speech.
+Full-stack browser application with Learn, Practice, Explore, Partner and Progress flows, a Node 24 HTTP API, SQLite persistence, anonymous protected sessions, local hand tracking, progress export/deletion, responsive styling, and deployment/QA tooling.
 
----
+**Release status:** engineering release candidate, not certified launch-ready. The included ASL curriculum is draft and the geometric pose model is not independently validated. Instructor demonstrations, human/device UAT, recognition evaluation, deployment smoke tests and a security/restore review must be completed. `npm run release:check` refuses an incomplete signoff. A working build or green unit suite cannot establish ASL teaching accuracy.
 
-## Features
-
-- 🎥 **Real-time webcam hand tracking** via MediaPipe Tasks Vision
-- ✋ **Hand skeleton overlay** with landmark visualization
-- 🧠 **Geometric sign classifier** — real computer-vision pipeline, not random/fake output
-- ⏱ **Temporal smoothing** — signs must be held for ~800ms before acceptance
-- 📝 **Sentence builder** — accumulates recognized signs into a subtitle
-- ✏️ **Editable subtitles** — click to correct any word
-- 🔊 **Text-to-speech** via Web Speech API with voice/rate/pitch/volume control
-- ↩️ **Undo / Clear** controls
-- ⚙️ **Settings panel** — confidence threshold, hold duration, camera, TTS
-- 🔒 **100% client-side** — no camera frames are uploaded anywhere
-- ♿ **Accessible** — ARIA labels, keyboard navigation, high-contrast dark theme
-
----
-
-## Technology Stack
-
-| Layer | Technology |
-|---|---|
-| Framework | React 19 + TypeScript |
-| Build Tool | Vite 8 |
-| Styling | Tailwind CSS v4 |
-| Hand Tracking | `@mediapipe/tasks-vision` HandLandmarker |
-| Sign Classifier | Custom geometric classifier (landmark angles + extension ratios) |
-| Text-to-Speech | Web Speech API (`SpeechSynthesis`) |
-| Camera | `MediaDevices.getUserMedia` |
-
----
-
-## How Sign Recognition Works
+## Start
 
 ```
-Camera frame
-    ↓
-MediaPipe HandLandmarker (WASM, GPU delegate)
-    ↓
-21 3-D hand landmarks
-    ↓
-Normalize (translate wrist to origin, scale by palm length)
-    ↓
-Geometric classifier
-  → Finger extension ratios (tip-to-wrist / finger length)
-  → Thumb pinch distances
-  → Thumb-index angle
-  → Per-sign match function → confidence 0–1
-    ↓
-Temporal smoother (voting window, hold-duration gate, cooldown)
-    ↓
-Accepted prediction → Sentence builder
-    ↓
-Subtitle display → Text-to-Speech
-```
-
-The classifier is abstracted behind a `SignRecognitionModel` interface:
-
-```ts
-interface SignRecognitionModel {
-  recognize(landmarks: HandLandmark[]): SignPrediction;
-}
-```
-
-This means you can replace `GeometricSignClassifier` with a TensorFlow.js neural network or any other model without touching any other file.
-
----
-
-## Supported Signs (v1 — 22 total)
-
-### Vocabulary Signs
-| Sign | Display |
-|---|---|
-| `HELLO` | Hello |
-| `THANK_YOU` | Thank You |
-| `YES` | Yes |
-| `NO` | No |
-| `PLEASE` | Please |
-| `SORRY` | Sorry |
-| `HELP` | Help |
-| `I_LOVE_YOU` | I Love You |
-| `MY` | My |
-| `GOOD` | Good |
-| `BAD` | Bad |
-| `STOP` | Stop |
-| `MORE` | More |
-| `WANT` | Want |
-| `NEED` | Need |
-
-### Fingerspelling (Static Letters)
-`A · B · C · D · L · O · V · W · Y`
-
-> **Note:** Dynamic signs (involving hand motion) are not yet supported. The geometric classifier works on static hand shapes only.
-
----
-
-## Installation
-
-```bash
-# Clone / open the project folder
-cd "Sign Language"
-
-# Install dependencies
-npm install
-
-# Start dev server
+npm ci
+npm run assets:prepare
+npm run dev:api
+# another terminal
 npm run dev
 ```
 
-Open **http://localhost:5173** in Chrome or Edge.
+For a single production-style local process, use `npm run build && npm start`, then http://localhost:3000. Camera access needs localhost or HTTPS. The build copies installed MediaPipe WASM and downloads a versioned model only after SHA-256 verification; inference uses same-origin assets and camera frames remain in-browser. The API stores only anonymous session metadata and practiced sign IDs. Progress is also cached locally for outage recovery. There is no account login or cross-device identity in this architecture.
 
-> ⚠️ Camera access requires HTTPS or localhost. The dev server serves over localhost automatically.
-
----
-
-## Running Locally
-
-```bash
-npm run dev      # Start development server (localhost:5173)
-npm run build    # Production build (dist/)
-npm run preview  # Preview production build
-```
-
----
-
-## Model Information
-
-**Model:** MediaPipe Hand Landmarker (`hand_landmarker.task`)
-- Loaded from Google's CDN on first use (~5 MB)
-- Runs via WebAssembly with GPU acceleration
-- Detects up to 2 hands simultaneously
-- Outputs 21 3-D landmarks per hand
-
-**Classifier:** Custom `GeometricSignClassifier`
-- No pre-trained weights — uses geometric heuristics
-- Computes finger extension ratios and thumb angles
-- Each sign has a hand-crafted match function
-- Returns confidence score 0–1
-- Configurable threshold (default 70%)
-
----
-
-## Limitations
-
-1. **Static signs only** — dynamic ASL signs involving motion (e.g., "PLEASE" wrist circles, "SORRY" chest circles) are detected at their peak static pose only
-2. **Geometric accuracy** — similar hand shapes (e.g., ASL `A` vs `S`) may be confused; a trained MLP/CNN would be significantly more accurate
-3. **Lighting dependent** — MediaPipe works best in good, even lighting with high contrast
-4. **Single hand** — the classifier uses only the first detected hand
-5. **Not a complete ASL dictionary** — only 22 signs are supported in v1
-
----
-
-## Privacy
-
-> **Camera frames are processed locally in your browser and are never uploaded to any server.**
->
-> - MediaPipe runs via WebAssembly in your browser tab
-> - The hand landmark model is loaded once from Google's public CDN
-> - No video data, landmark data, or text leaves your device
-
----
-
-## Future Improvements
-
-- [ ] Train a neural network (MLP/CNN) on ASL landmark datasets for higher accuracy
-- [ ] Support dynamic/motion-based signs using LSTM over landmark sequences
-- [ ] Two-handed sign recognition
-- [ ] Facial expression + body pose (MediaPipe Holistic)
-- [ ] Full ASL alphabet (26 letters)
-- [ ] More vocabulary (100+ signs)
-- [ ] Sentence-level grammar correction (AI)
-- [ ] Multiple sign languages (BSL, ISL, etc.)
-- [ ] Mobile touch support
-- [ ] Offline model bundling (no CDN dependency)
-- [ ] Custom user-trainable signs
-- [ ] Conversation mode (speaker + signer)
-- [ ] Auto-speak mode
-
----
-
-## Project Structure
+## Quality and release
 
 ```
-src/
-├── types/
-│   └── sign.ts              ← All shared TypeScript types
-├── models/
-│   └── signClassifier.ts    ← SignRecognitionModel interface + GeometricSignClassifier
-├── utils/
-│   ├── confidence.ts        ← Landmark normalization, finger geometry
-│   ├── smoothing.ts         ← TemporalSmoother (hold-duration + cooldown)
-│   └── sentenceBuilder.ts   ← Word accumulation with undo/clear
-├── services/
-│   ├── cameraService.ts     ← getUserMedia wrapper
-│   ├── speechService.ts     ← SpeechSynthesis wrapper
-│   └── recognitionService.ts← MediaPipe HandLandmarker + rAF loop
-├── hooks/
-│   ├── useCamera.ts         ← Camera state management
-│   ├── useHandTracking.ts   ← MediaPipe initialization + tracking
-│   ├── useSignRecognition.ts← Pipeline: classify → smooth → build sentence
-│   └── useSpeech.ts         ← TTS with voice enumeration
-├── components/
-│   ├── CameraView.tsx       ← Video element + overlay container
-│   ├── HandOverlay.tsx      ← Canvas landmark drawing
-│   ├── SubtitleDisplay.tsx  ← Editable sentence + detection badge
-│   ├── Controls.tsx         ← Start/Stop/Speak/Undo/Clear toolbar
-│   ├── StatusIndicator.tsx  ← Camera/Model/Hand status pills
-│   └── Settings.tsx         ← Full settings modal
-└── App.tsx                  ← Root component, global state
+npm run check
+npx playwright install --with-deps chromium
+npm run test:e2e
+npm audit --audit-level=high
+npm run release:check
 ```
+
+The patch includes real API/security isolation tests, recognition timing regressions, browser learner-flow tests, automated accessibility scans, and GitHub Actions. Human UAT and camera/recognition quality require the protocols in docs/UAT.md. See docs/QA-RESULTS.md for checks actually executed while preparing this patch. Do not mark pending tests passed.
+
+- [API](docs/API.md): routes, sessions, schemas and errors.
+- [Security](docs/SECURITY.md): controls, threat boundaries and reviews.
+- [Deployment](docs/DEPLOYMENT.md): TLS, durable storage, backup/restore and rollback.
+- [UAT](docs/UAT.md): device, accessibility, teaching and acceptance scenarios.
+- [Release signoff](docs/release-signoff.json): human evidence references.
+
+Catalog content lives in content/catalog.json. Put licensed demonstration videos and captions under public/lessons. Approved lessons render their video in Practice; drafts visibly state that review is pending. The existing classifier's SUPPORTED_SIGNS is the pose registry. It uses handcrafted geometry with ambiguity rejection and temporal hold/cooldown; it cannot translate arbitrary ASL sentences or assess full movement/facial grammar. Pair practice with fluent ASL instruction.
+
+No changes are deployed by applying this patch. See the deployment guide and satisfy the release gate before public launch.

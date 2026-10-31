@@ -44,7 +44,7 @@ export class TemporalSmoother {
     // Update rolling window
     this.window.push({ sign: prediction.sign, confidence: prediction.confidence, timestamp: now });
     const cutoff = now - this.opts.holdDurationMs * 2;
-    this.window = this.window.filter((e) => e.timestamp > cutoff);
+    this.window = this.window.filter((e) => e.timestamp > cutoff).slice(-this.opts.windowSize);
 
     if (prediction.sign === 'NONE') {
       this.holdStart = null;
@@ -54,7 +54,7 @@ export class TemporalSmoother {
 
     // Dominant sign in the window
     const dominant = this.getDominantSign();
-    if (!dominant || dominant.sign === 'NONE') {
+    if (!dominant || dominant.sign === 'NONE' || dominant.sign !== prediction.sign) {
       this.holdStart = null;
       this.currentHeldSign = 'NONE';
       return null;
@@ -134,10 +134,10 @@ export class TemporalSmoother {
     let best: { sign: string; confidence: number } | null = null;
     for (const [sign, data] of Object.entries(votes)) {
       const avgConf = data.totalConf / data.count;
-      if (!best || data.count > votes[best.sign]?.count || avgConf > best.confidence) {
+      if (!best || data.count > votes[best.sign].count || (data.count === votes[best.sign].count && avgConf > best.confidence)) {
         best = { sign, confidence: avgConf };
       }
     }
-    return best;
+    return best && votes[best.sign].count / this.window.length >= 0.65 ? best : null;
   }
 }

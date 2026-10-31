@@ -17,6 +17,7 @@ export const CameraView: React.FC<CameraViewProps> = ({
   showLandmarks,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [aspect, setAspect] = useState(16 / 9);
   const [dims, setDims] = useState({ width: 640, height: 360 });
 
   useEffect(() => {
@@ -34,15 +35,16 @@ export const CameraView: React.FC<CameraViewProps> = ({
     <div
       ref={containerRef}
       className="camera-container relative w-full overflow-hidden rounded-2xl bg-gray-950 border border-white/10"
-      style={{ aspectRatio: '16/9' }}
+      style={{ aspectRatio: String(aspect) }}
       role="img"
       aria-label="Live camera feed with hand tracking overlay"
     >
       {/* Mirror the video feed */}
       <video
         ref={videoRef as React.RefObject<HTMLVideoElement>}
-        className="absolute inset-0 w-full h-full object-cover"
+        className="absolute inset-0 w-full h-full object-contain"
         style={{ transform: 'scaleX(-1)', display: showCamera ? 'block' : 'none' }}
+        onLoadedMetadata={(event) => { const video = event.currentTarget; if(video.videoHeight) setAspect(video.videoWidth / video.videoHeight); }}
         playsInline
         muted
         autoPlay

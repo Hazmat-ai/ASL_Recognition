@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { CameraService } from '../services/cameraService';
 import type { CameraStatus } from '../types/sign';
 import type { CameraDevice } from '../services/cameraService';
@@ -40,6 +40,17 @@ export function useCamera() {
     }
     setStatus('idle');
   }, []);
+
+  useEffect(() => {
+    const onHidden = () => { if (document.hidden) stopCamera(); };
+    document.addEventListener('visibilitychange', onHidden);
+    window.addEventListener('pagehide', stopCamera);
+    return () => {
+      document.removeEventListener('visibilitychange', onHidden);
+      window.removeEventListener('pagehide', stopCamera);
+      cameraService.stop();
+    };
+  }, [stopCamera]);
 
   return { status, devices, videoRef, streamRef, startCamera, stopCamera, enumerate };
 }

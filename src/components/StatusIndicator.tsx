@@ -73,15 +73,15 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
     green:  'text-emerald-300',
     yellow: 'text-amber-300',
     red:    'text-red-400',
-    gray:   'text-gray-500',
+    gray:   'text-gray-400',
   };
 
   return (
     <div
       className="flex flex-wrap gap-2"
-      role="status"
+      role="group"
       aria-label="System status"
-      aria-live="polite"
+      aria-live="off"
     >
       {pills.map((pill) => (
         <div

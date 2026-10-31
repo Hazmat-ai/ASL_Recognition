@@ -1,0 +1,263 @@
+[
+  {
+    "sign": "HELLO",
+    "label": "Hello",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "THANK_YOU",
+    "label": "Thank You",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "YES",
+    "label": "Yes",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "NO",
+    "label": "No",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "PLEASE",
+    "label": "Please",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "SORRY",
+    "label": "Sorry",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "HELP",
+    "label": "Help",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "I_LOVE_YOU",
+    "label": "I Love You",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "MY",
+    "label": "My",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "GOOD",
+    "label": "Good",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "BAD",
+    "label": "Bad",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "STOP",
+    "label": "Stop",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "MORE",
+    "label": "More",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "HOUSE",
+    "label": "House",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "BOOK",
+    "label": "Book",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "FINISHED",
+    "label": "Finished",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "WANT",
+    "label": "Want",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "NEED",
+    "label": "Need",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "LETTER_A",
+    "label": "A",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "LETTER_B",
+    "label": "B",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "LETTER_C",
+    "label": "C",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "LETTER_D",
+    "label": "D",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "LETTER_L",
+    "label": "L",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "LETTER_O",
+    "label": "O",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "LETTER_V",
+    "label": "V",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "LETTER_W",
+    "label": "W",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "LETTER_Y",
+    "label": "Y",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "LETTER_I",
+    "label": "I",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  },
+  {
+    "sign": "FAMILY",
+    "label": "Family",
+    "reviewStatus": "draft",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "demoPath": null,
+    "cue": "Watch a fluent ASL signer demonstrate the complete sign before trying a pose check."
+  }
+]

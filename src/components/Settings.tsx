@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import type { AppSettings } from '../types/sign';
 import type { VoiceOption } from '../services/speechService';
 import type { CameraDevice } from '../services/cameraService';
@@ -21,6 +21,27 @@ export const Settings: React.FC<SettingsProps> = ({
   voices,
   cameras,
 }) => {
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const panel = document.querySelector<HTMLElement>('[aria-label="Settings panel"]');
+    const focusable = () => Array.from(panel?.querySelectorAll<HTMLElement>('button,input,select,a[href],[tabindex="0"]') ?? []).filter(el => !el.hasAttribute('disabled'));
+    focusable()[0]?.focus();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handle = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); closeRef.current(); }
+      if (event.key === 'Tab') {
+        const items = focusable(), first = items[0], last = items[items.length-1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
+    };
+    document.addEventListener('keydown',handle);
+    return () => { document.removeEventListener('keydown',handle); document.body.style.overflow = previousOverflow; previous?.focus(); };
+  },[open]);
   if (!open) return null;
 
   const patch = (key: keyof AppSettings, value: AppSettings[keyof AppSettings]) => {
@@ -74,7 +95,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <span className="text-2xl" aria-hidden>🇺🇸</span>
                 <div>
                   <p className="text-sm font-medium text-white">ASL — American Sign Language</p>
-                  <p className="text-xs text-gray-500">Geometric classifier · {SUPPORTED_SIGNS.length} signs supported</p>
+                  <p className="text-xs text-gray-400">Geometric classifier · {SUPPORTED_SIGNS.length} signs supported</p>
                 </div>
               </div>
             </div>
@@ -143,7 +164,7 @@ export const Settings: React.FC<SettingsProps> = ({
             <div className="mt-3 space-y-4">
               <ToggleField
                 id="setting-auto-speak"
-                label="Auto-speak on sentence completion"
+                label="Read the English label when a practice lesson opens"
                 checked={settings.tts.autoSpeak}
                 onChange={(v) => patchTts('autoSpeak', v)}
               />
@@ -280,7 +301,7 @@ function SliderField({
         aria-valuenow={value}
         aria-valuetext={format(value)}
       />
-      <div className="flex justify-between text-xs text-gray-600 mt-0.5">
+      <div className="flex justify-between text-xs text-gray-400 mt-0.5">
         <span>Low</span>
         <span>High</span>
       </div>
