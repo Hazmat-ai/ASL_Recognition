@@ -91,7 +91,7 @@ function App() {
     <div className="learning-app min-h-screen text-slate-100">
       <header className="learning-header sticky top-0 z-40 border-b border-white/10">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <button className="flex items-center gap-3 text-left" onClick={() => setSection('Learn')} aria-label="Palm home">
+          <button className="flex items-center gap-3 text-left" onClick={() => setSection('Learn')}>
             <span className="brand-mark" aria-hidden="true">✋</span>
             <span>
               <span className="block text-base font-bold tracking-tight text-white">palm<span className="text-rose-300">.</span></span>
